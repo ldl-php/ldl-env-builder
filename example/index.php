@@ -1,81 +1,66 @@
 <?php declare(strict_types=1);
 
 use LDL\Env\Builder\EnvBuilder;
-use LDL\Env\Compiler\EnvCompiler;
-use LDL\Env\Compiler\Options\EnvCompilerOptions;
-use LDL\Env\Config\EnvConfigFactory;
-use LDL\Env\Finder\EnvFileFinder;
-use LDL\Env\Finder\Options\EnvFileFinderOptions;
-use LDL\Env\Writer\EnvFileWriter;
-use LDL\Env\Writer\Options\EnvWriterOptions;
-use LDL\Env\Reader\EnvReader;
-use LDL\Env\Reader\Options\EnvReaderOptions;
-use LDL\FS\Type\Types\Generic\GenericFileType;
-use LDL\Env\Reader\Line\EnvLine;
+use LDL\Env\File\Finder\EnvFileFinder;
+use LDL\Env\File\Finder\Options\EnvFileFinderOptions;
+use LDL\Env\Builder\Config\EnvBuilderConfig;
+use LDL\Env\Builder\Config\Writer\EnvBuilderConfigWriter;
+use LDL\Env\Util\File\Parser\EnvFileParser;
+use LDL\Env\Util\File\Parser\Options\EnvFileParserOptions;
+use LDL\Env\Util\File\Writer\EnvFileWriter;
+use LDL\Env\Util\File\Writer\Options\EnvFileWriterOptions;
+use LDL\Env\Util\Line\Collection\Compiler\EnvCompiler;
+use LDL\Env\Util\Line\Collection\Compiler\Options\EnvCompilerOptions;
 
 require __DIR__.'/../vendor/autoload.php';
 
 try{
-
-    $finderOptions = EnvFileFinderOptions::fromArray([
-        'directories' => [__DIR__.'/Application'],
-        'files' => ['.env'],
-        'excludedDirectories' => [],
-    ]);
-
-    $compilerOptions = EnvCompilerOptions::fromArray([
-        'allowVariableOverwrite' => false,
-        'ignoreSyntaxErrors' => false,
-        'prefixDepth' => 0,
-        'convertToUpperCase' => true,
-        'commentsEnabled' => true,
-        'removeComments' => false
-    ]);
-
-    $writerOptions = EnvWriterOptions::fromArray([
-        'filename' => '.env-compiled',
-        'force' => true
-    ]);
-
-    $writer = new EnvFileWriter($writerOptions);
-
     echo "[ Building compiled env file ]\n";
 
-    $builder = new EnvBuilder(
-        new EnvFileFinder($finderOptions),
-        new EnvCompiler($compilerOptions)
+    $envFileFinder = new EnvFileFinder(EnvFileFinderOptions::fromArray([
+        'directories' => [__DIR__.'/Application'],
+        'excludedDirectories' => [__DIR__.'/Application/User']
+    ]));
+
+    $envFileParser = new EnvFileParser(
+        EnvFileParserOptions::fromArray([]),
+        new EnvCompiler(EnvCompilerOptions::fromArray([]))
     );
 
-    $content = $builder->build();
+    $envCompiler = new EnvCompiler(EnvCompilerOptions::fromArray([]));
 
-    $writer->write(EnvConfigFactory::factory(
-        $builder->getFinder(),
-        $builder->getCompiler(),
-        $writer
-    ), $content);
+    $envFileWriter = new EnvFileWriter(
+        EnvFileWriterOptions::fromArray([
+            'filename' => '.env-compiled',
+            'force' => true
+        ])
+    );
+
+    $config = new EnvBuilderConfig(
+        $envFileParser,
+        $envFileFinder,
+        $envCompiler,
+        $envFileWriter
+    );
+
+    $lines = EnvBuilder::build($config);
+
+    $envFileWriter->write(
+        $lines,
+        $envFileWriter->getOptions()->getFilename()
+    );
+
+    EnvBuilderConfigWriter::write($config, 'env-config.json');
+
+    echo "Build success!\n";
+
+    var_dump($lines->toArray());
 
 }catch(\Exception $e) {
 
+    echo $e->getMessage()."\n";
     echo "[ Build failed! ]\n";
     return;
 
 }
 
-echo "Load generated .env-compiled\n";
-
-$env = new EnvReader();
-
-$envReaderOptions = EnvReaderOptions::fromArray([
-    'file' => new GenericFileType(__DIR__.'/../.env-compiled')
-]);
-
-$collection = $env->read($envReaderOptions);
-
-echo "Get content of .env-compiled\n";
-
-/**
- * @var EnvLine $envLine
- */
-foreach($collection as $envLine){
-    echo (string) $envLine->getValue();
-}

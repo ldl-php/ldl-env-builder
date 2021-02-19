@@ -1,18 +1,19 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace LDL\Env\Console\Command;
 
-use LDL\Env\Compiler\EnvCompiler;
-use LDL\Env\Config\EnvConfigFactory;
-use LDL\Env\Finder\EnvFileFinder;
-use LDL\Env\Writer\EnvFileWriter;
+use LDL\Env\Builder\Config\EnvBuilderConfig;
+use LDL\Env\Builder\Config\Writer\EnvBuilderConfigWriter;
+use LDL\Env\File\Finder\EnvFileFinder;
+use LDL\Env\Util\File\Parser\EnvFileParser;
+use LDL\Env\Util\File\Parser\Options\EnvFileParserOptions;
+use LDL\Env\Util\File\Writer\EnvFileWriter;
+use LDL\Env\Util\File\Writer\Options\EnvFileWriterOptions;
+use LDL\Env\Util\Line\Collection\Compiler\EnvCompiler;
+use LDL\Env\Util\Line\Collection\Compiler\Options\EnvCompilerOptions;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use LDL\Env\Builder\EnvBuilder;
-use LDL\Env\Compiler\Options\EnvCompilerOptions;
-use LDL\Env\Finder\Options\EnvFileFinderOptions;
-use LDL\Env\Writer\Options\EnvWriterOptions;
+use LDL\Env\File\Finder\Options\EnvFileFinderOptions;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,8 +26,8 @@ class BuildCommand extends SymfonyCommand
 
     public function configure() : void
     {
+        $readerDefaults = EnvFileParserOptions::fromArray([]);
         $finderDefaults = EnvFileFinderOptions::fromArray([]);
-        $compilerDefaults = EnvCompilerOptions::fromArray([]);
 
         $this->setName(self::COMMAND_NAME)
             ->setDescription('Build compiled .env file')
@@ -77,18 +78,17 @@ class BuildCommand extends SymfonyCommand
                 'Ignore syntax error'
             )
             ->addOption(
-                'prefix-variable',
-                'x',
-                InputOption::VALUE_OPTIONAL,
-                'Set directory prefix variable name (overrides prefix-variable-depth)',
-                $compilerDefaults->getPrefixDepth()
-            )
-            ->addOption(
                 'prefix-variable-depth',
                 'p',
                 InputOption::VALUE_OPTIONAL,
                 'Set directory depth to prefix variable name with directory name',
-                $compilerDefaults->getPrefixDepth()
+                $readerDefaults->getDirPrefixDepth()
+            )
+            ->addOption(
+                'add-prefix',
+                'x',
+                InputOption::VALUE_NONE,
+                'Set directory prefix variable name (overrides prefix-variable-depth)',
             )
             ->addOption(
                 'convert-to-uppercase',
@@ -100,13 +100,7 @@ class BuildCommand extends SymfonyCommand
                 'comments-enabled',
                 'c',
                 InputOption::VALUE_NONE,
-                'Adds a comment indicating from which file the env variables defined came from'
-            )
-            ->addOption(
-                'remove-comments',
-                'r',
-                InputOption::VALUE_NONE,
-                'Remove the comments'
+                'Comments enable on .env files'
             );
     }
 
@@ -130,6 +124,11 @@ class BuildCommand extends SymfonyCommand
         $excludedDirectories = $input->getOption('excluded-directories');
 
         try{
+            $readerOptions = EnvFileParserOptions::fromArray([
+                'skipUnreadable' => false,
+                'ignoreSyntaxErrors' => $input->getOption('ignore-syntax-error'),
+                'dirPrefixDepth' => $input->getOption('prefix-variable-depth'),
+            ]);
 
             $finderOptions = EnvFileFinderOptions::fromArray([
                 'directories' => explode(',', $input->getOption('scan-directories')),
@@ -142,47 +141,48 @@ class BuildCommand extends SymfonyCommand
 
             $compilerOptions = EnvCompilerOptions::fromArray([
                 'allowVariableOverwrite' => $input->getOption('variable-overwrite'),
-                'ignoreSyntaxErrors' => $input->getOption('ignore-syntax-error'),
-                'prefix' => $input->getOption('prefix-variable'),
-                'prefixDepth' => $input->getOption('prefix-variable-depth'),
-                'convertToUpperCase' => $input->getOption('convert-to-uppercase'),
+                'addPrefix' => $input->getOption('add-prefix'),
+                'varNameToUpperCase' => $input->getOption('convert-to-uppercase'),
                 'commentsEnabled' => $input->getOption('comments-enabled'),
-                'removeComments' => $input->getOption('remove-comments'),
-                'onBeforeCompile' => function($file, $lines) use ($compilerProgress, $output){
+                'onBeforeCompile' => static function($file, $lines) use ($compilerProgress, $output){
                     $output->writeln("\n\n<info>Compiling {$file->getRealPath()}</info>\n");
                     $compilerProgress->setMaxSteps(count($lines));
                 },
-                'onCompile' => function($file, $var) use ($compilerProgress){
+                'onCompile' => static function() use ($compilerProgress){
                     $compilerProgress->advance();
                 },
-                'onAfterCompile' => function($file, $vars) use ($compilerProgress){
+                'onAfterCompile' => static function() use ($compilerProgress){
                     $compilerProgress->finish();
                 }
             ]);
 
-            $writerOptions = EnvWriterOptions::fromArray([
+            $writerOptions = EnvFileWriterOptions::fromArray([
                 'filename' => $input->getArgument('output-file'),
                 'force' => (bool) $input->getOption('force-overwrite')
             ]);
-
-            $writer = new EnvFileWriter($writerOptions);
 
             $title = '[ Building compiled env file ]';
 
             $output->writeln("\n<info>$title</info>");
 
-            $builder = new EnvBuilder(
-                new EnvFileFinder($finderOptions),
-                new EnvCompiler($compilerOptions)
+            $envFileParser = new EnvFileParser($readerOptions);
+            $envFileFinder = new EnvFileFinder($finderOptions);
+            $envCompiler = new EnvCompiler($compilerOptions);
+            $envFileWriter = new EnvFileWriter($writerOptions);
+
+            $builderConfig = new EnvBuilderConfig(
+                $envFileParser,
+                $envFileFinder,
+                $envCompiler,
+                $envFileWriter
             );
 
-            $content = $builder->build();
+            $content = EnvBuilder::build($builderConfig);
 
-            $writer->write(EnvConfigFactory::factory(
-                $builder->getFinder(),
-                $builder->getCompiler(),
-                $writer
-            ), $content);
+            $writerConfig = new EnvBuilderConfigWriter();
+
+            $writerConfig::write($builderConfig, 'env-config.json');
+            $envFileWriter->write($content, $writerOptions->getFilename());
 
             $output->writeln("");
 

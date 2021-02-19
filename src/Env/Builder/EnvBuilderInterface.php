@@ -1,30 +1,20 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace LDL\Env\Builder;
 
-use LDL\Env\Compiler\EnvCompilerInterface;
-use LDL\Env\Finder\EnvFileFinderInterface;
-use LDL\Env\Finder\Exception\NoFilesFoundException;
-use LDL\Env\Writer\Exception\FileAlreadyExistsException;
+use LDL\Env\Builder\Config\EnvBuilderConfigInterface;
+use LDL\Env\File\Finder\Exception\NoFilesFoundException;
+use LDL\Env\Util\File\Writer\Exception\FileAlreadyExistsException;
+use LDL\Env\Util\Line\Collection\EnvLineCollectionInterface;
 
 interface EnvBuilderInterface
 {
     /**
-     * @return string
+     * @param EnvBuilderConfigInterface $config
+     * @return EnvLineCollectionInterface
      * @throws NoFilesFoundException
      * @throws FileAlreadyExistsException
      */
-    public function build(): string;
+    public static function build(EnvBuilderConfigInterface $config=null): EnvLineCollectionInterface;
 
-    /**
-     * @return EnvFileFinderInterface
-     */
-    public function getFinder(): EnvFileFinderInterface;
-
-    /**
-     * @return EnvCompilerInterface
-     */
-    public function getCompiler(): EnvCompilerInterface;
 }

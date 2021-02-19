@@ -1,60 +1,24 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace LDL\Env\Builder;
 
-use LDL\Env\Compiler\EnvCompiler;
-use LDL\Env\Compiler\EnvCompilerInterface;
-use LDL\Env\Finder\EnvFileFinder;
-use LDL\Env\Finder\EnvFileFinderInterface;
+use LDL\Env\Builder\Config\EnvBuilderConfig;
+use LDL\Env\Builder\Config\EnvBuilderConfigInterface;
+use LDL\Env\Util\Line\Collection\EnvLineCollectionInterface;
 
-class EnvBuilder implements EnvBuilderInterface
+abstract class EnvBuilder implements EnvBuilderInterface
 {
     /**
-     * @var EnvFileFinderInterface
-     */
-    private $envFileFinder;
-
-    /**
-     * @var EnvCompilerInterface
-     */
-    private $envCompiler;
-
-    public function __construct(
-        EnvFileFinderInterface $envFileFinder = null,
-        EnvCompilerInterface $envCompiler = null
-    )
-    {
-        $this->envFileFinder = $envFileFinder ?? new EnvFileFinder();
-        $this->envCompiler = $envCompiler ?? new EnvCompiler();
-    }
-
-    /**
      * {@inheritdoc}
      */
-    public function build(): string
+    public static function build(EnvBuilderConfigInterface $config=null): EnvLineCollectionInterface
     {
-        $files = $this->envFileFinder->find();
+        $config   = $config ?? new EnvBuilderConfig();
 
-        return $this->envCompiler->compile(
-            $files
-        );
+        $parser   = $config->getParser();
+        $finder   = $config->getFinder();
+
+        return $parser->parse($finder->find());
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getFinder(): EnvFileFinderInterface
-    {
-        return $this->envFileFinder;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCompiler(): EnvCompilerInterface
-    {
-        return $this->envCompiler;
-    }
 }

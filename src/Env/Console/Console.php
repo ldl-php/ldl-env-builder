@@ -1,11 +1,11 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace LDL\Env\Console;
 
-use LDL\FS\Finder\Adapter\LocalFileFinder;
-use LDL\FS\Util\Path;
+use LDL\File\Finder\Adapter\Local\Facade\LocalFileFinderFacade;
+use LDL\File\Finder\FoundFile;
+use LDL\Validators\Chain\AndValidatorChain;
+use LDL\Validators\RegexValidator;
 use Symfony\Component\Console\Application as SymfonyApplication;
 
 class Console extends SymfonyApplication
@@ -14,22 +14,19 @@ class Console extends SymfonyApplication
     {
         parent::__construct('<info>[ Env file builder ]</info>', $version);
 
-        $commands = LocalFileFinder::findRegex(
-            '^.*\.php$',
-            [
-                Path::make(__DIR__, 'Command')
-            ]
+        $foundFiles = LocalFileFinderFacade::find(
+            [(__DIR__.'/Command')],
+            true,
+            new AndValidatorChain([
+                new RegexValidator('/^.*\.php$/')
+            ])
         );
 
-        $commands = array_map(function($item) {
-            return $item->getRealPath();
-        },\iterator_to_array($commands));
-
         /**
-         * @var \SplFileInfo $commandFile
+         * @var FoundFile $foundFile
          */
-        foreach($commands as $key => $commandFile){
-            require $commandFile;
+        foreach($foundFiles as $foundFile){
+            require $foundFile->getPath();
 
             $class = get_declared_classes();
             $class = $class[count($class) - 1];
