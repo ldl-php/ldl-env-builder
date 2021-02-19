@@ -3,6 +3,8 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-$console = new \LDL\Env\Console\Console();
+use LDL\Env\Console\Command\BuildCommand;
 
+$console = new \LDL\Env\Console\Console();
+$console->add(new BuildCommand());
 $console->run();

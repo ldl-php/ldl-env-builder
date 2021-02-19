@@ -5,7 +5,7 @@
     "keywords": [
         "ENV",
         "environment",
-	"compiler"
+        "compiler"
     ],
     "homepage": "https://github.com/pthreat/env-builder",
     "license": "MIT",
@@ -16,16 +16,21 @@
         },
         {
             "name": "Gonzalo Coda",
-            "email": "gonzalocoda@gmail.com"
+            "email": "gonzalocoda@hotmail.com"
         }
     ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "suggest":{
+        "ext-posix": "*"
+    },
     "require": {
+        "ext-json": "*",
         "php": ">=7.3",
         "symfony/console": "~5.0",
-        "ldl-framework/file-finder": "^0.0.1",
-        "symfony/string": "^5.1",
-        "ext-json": "*",
-        "ext-posix": "*"
+        "ldl-framework/file-finder": "dev-master",
+        "ldl-framework/file-finder-adapter-local": "dev-master",
+        "ldl-framework/env-util": "dev-main"
     },
     "autoload": {
         "psr-4": {

@@ -1,60 +1,50 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace LDL\Env\Builder;
 
-use LDL\Env\Compiler\EnvCompiler;
-use LDL\Env\Compiler\EnvCompilerInterface;
-use LDL\Env\Finder\EnvFileFinder;
-use LDL\Env\Finder\EnvFileFinderInterface;
+use LDL\Env\File\Finder\EnvFileFinderInterface;
+use LDL\Env\Util\Compiler\EnvCompilerInterface;
+use LDL\Env\Util\File\Parser\EnvFileParserInterface;
+use LDL\Env\Util\Line\Collection\EnvLineCollectionInterface;
 
-class EnvBuilder implements EnvBuilderInterface
+final class EnvBuilder implements EnvBuilderInterface
 {
+    /**
+     * @var EnvFileParserInterface
+     */
+    private $parser;
+
     /**
      * @var EnvFileFinderInterface
      */
-    private $envFileFinder;
+    private $finder;
 
     /**
      * @var EnvCompilerInterface
      */
-    private $envCompiler;
+    private $compiler;
 
     public function __construct(
-        EnvFileFinderInterface $envFileFinder = null,
-        EnvCompilerInterface $envCompiler = null
+        EnvFileFinderInterface $finder,
+        EnvFileParserInterface $fileParser,
+        EnvCompilerInterface $compiler
     )
     {
-        $this->envFileFinder = $envFileFinder ?? new EnvFileFinder();
-        $this->envCompiler = $envCompiler ?? new EnvCompiler();
+        $this->finder = $finder;
+        $this->parser = $fileParser;
+        $this->compiler = $compiler;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function build(): string
+    public function build(): EnvLineCollectionInterface
     {
-        $files = $this->envFileFinder->find();
-
-        return $this->envCompiler->compile(
-            $files
+        return $this->compiler->compile(
+            $this->parser->parse(
+                $this->finder->find()
+            )
         );
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getFinder(): EnvFileFinderInterface
-    {
-        return $this->envFileFinder;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getCompiler(): EnvCompilerInterface
-    {
-        return $this->envCompiler;
-    }
 }

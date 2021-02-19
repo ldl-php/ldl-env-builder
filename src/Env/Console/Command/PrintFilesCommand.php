@@ -1,17 +1,14 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace LDL\Env\Console\Command;
 
-use LDL\Env\Finder\EnvFileFinder;
+use LDL\Env\File\Finder\EnvFileFinder;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
-use LDL\Env\Finder\Exception\NoFilesFoundException;
-use LDL\Env\Finder\Options\EnvFileFinderOptions;
+use LDL\Env\File\Finder\Exception\NoFilesFoundException;
+use LDL\Env\File\Finder\Options\EnvFileFinderOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Finder\SplFileInfo as FileInfo;
 
 class PrintFilesCommand extends SymfonyCommand
 {
@@ -84,12 +81,9 @@ class PrintFilesCommand extends SymfonyCommand
             return;
         }
 
-        /**
-         * @var FileInfo $file
-         */
         foreach($files as $file){
             $total++;
-            $output->writeln($file->getRealPath());
+            $output->writeln($file);
         }
 
         $output->writeln("\n<info>Total files: $total</info>");
