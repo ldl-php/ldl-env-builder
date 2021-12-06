@@ -9,7 +9,7 @@ try{
     echo "[ Building compiled env file ]\n";
 
     $envFileFinder = new EnvFileFinder(EnvFileFinderOptions::fromArray([
-        'directories' => [__DIR__.'/Application/Admin'],
+        'directories' => [__DIR__.'/Application'],
         'excludedDirectories' => [__DIR__.'/Application/User']
     ]));
 
