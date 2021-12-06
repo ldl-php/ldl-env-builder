@@ -9,6 +9,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 
 - feature/1201438240911768 - Combine ldl-env-util and ldl-file-finder-adapter-local to build compiled .env's from CLI
+- feature/1201475529448875 - Add more options to build command, fix directory exclusion bug
 
 ### Changed
 
+- fix/1201475529448875 - Fix directory exclusion bug
