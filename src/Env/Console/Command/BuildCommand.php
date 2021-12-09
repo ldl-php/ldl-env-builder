@@ -2,10 +2,10 @@
 
 namespace LDL\Env\Console\Command;
 
+use LDL\Console\Helper\ProgressBarFactory;
 use LDL\Env\File\Finder\EnvFileFinder;
 use LDL\Env\Util\Compiler\EnvCompiler;
 use LDL\Env\Util\File\Parser\EnvFileParser;
-use LDL\File\Exception\FileExistsException;
 use LDL\File\File;
 use LDL\Framework\Base\Collection\CallableCollection;
 use LDL\Framework\Helper\IterableHelper;
@@ -87,6 +87,9 @@ class BuildCommand extends SymfonyCommand
 
             if(!$verbose) {
                 $compilerProgress = new ProgressBar($output);
+                $compilerProgress->setBarCharacter("▩");
+                $compilerProgress->setEmptyBarCharacter("▢");
+                $compilerProgress->setProgressCharacter("▶");
                 $compilerProgress->setOverwrite(true);
             }
 
@@ -122,7 +125,7 @@ class BuildCommand extends SymfonyCommand
 
             $file = File::create($input->getArgument('output-file'), (string)$result, 0644, true);
 
-            $output->writeln("\n<info>Wrote compiled env file: $file</info>\n");
+            $output->writeln("\n\n<info>Wrote compiled env file: $file</info>\n");
 
         }catch(\Exception $e) {
 
