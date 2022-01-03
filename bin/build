@@ -1,10 +1,17 @@
 #!/usr/bin/env php
-<?php
+<?php declare(strict_types=1);
 
 require __DIR__.'/../vendor/autoload.php';
 
+use Symfony\Component\Console\Application;
 use LDL\Env\Console\Command\BuildCommand;
+use LDL\Env\Console\Command\PrintFilesCommand;
 
-$console = new \LDL\Env\Console\Console();
-$console->add(new BuildCommand());
+$console = new Application('env');
+
+$console->addCommands([
+    new BuildCommand(),
+    new PrintFilesCommand()
+]);
+
 $console->run();

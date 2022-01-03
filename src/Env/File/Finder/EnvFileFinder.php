@@ -1,20 +1,17 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace LDL\Env\File\Finder;
 
 use LDL\File\Collection\ReadableFileCollection;
 use LDL\File\Constants\FileTypeConstants;
-use LDL\File\Finder\Adapter\Local\Facade\LocalFileFinderFacade;
 use LDL\File\Finder\Adapter\Local\LocalFileFinderAdapter;
 use LDL\File\Finder\FoundFile;
 use LDL\File\Validator\FileNameValidator;
 use LDL\File\Validator\FileTypeValidator;
 use LDL\File\Validator\PathValidator;
-use LDL\Framework\Helper\IterableHelper;
 use LDL\Validators\Chain\AndValidatorChain;
-use LDL\Validators\Chain\Dumper\ValidatorChainExprDumper;
-use LDL\Validators\Chain\Item\Collection\ValidatorChainItemCollection;
-use LDL\Validators\Chain\OrValidatorChain;
 
 class EnvFileFinder implements EnvFileFinderInterface
 {
@@ -37,53 +34,47 @@ class EnvFileFinder implements EnvFileFinderInterface
     /**
      * {@inheritdoc}
      */
-    public function find(bool $cache = false) : ReadableFileCollection
+    public function find(bool $cache = false): ReadableFileCollection
     {
-        if(true === $cache){
+        if (true === $cache) {
             return $this->files;
         }
 
-        $this->files = clone($this->files);
+        $this->files = clone $this->files;
 
         $options = $this->options;
 
         $validators = new AndValidatorChain([
-            new FileTypeValidator([FileTypeConstants::FILE_TYPE_REGULAR])
+            new FileTypeValidator([FileTypeConstants::FILE_TYPE_REGULAR]),
         ]);
 
-        if(count($options->getExcludedDirectories()) > 0){
-            foreach($options->getExcludedDirectories() as $dir){
+        if (count($options->getExcludedDirectories()) > 0) {
+            foreach ($options->getExcludedDirectories() as $dir) {
                 $validators->getChainItems()->append(new PathValidator($dir, true));
             }
         }
 
-        if(count($options->getExcludedFiles()) > 0){
-            foreach($options->getExcludedFiles() as $file){
+        if (count($options->getExcludedFiles()) > 0) {
+            foreach ($options->getExcludedFiles() as $file) {
                 $validators->getChainItems()->append(new FileNameValidator($file, true));
             }
         }
 
-        foreach($this->options->getFiles() as $file){
+        foreach ($this->options->getFiles() as $file) {
             $validators->getChainItems()->append(new FileNameValidator($file));
         }
 
         $finder = new LocalFileFinderAdapter($validators);
         $foundFiles = iterator_to_array($finder->find($this->options->getDirectories()), false);
 
-        if(!count($foundFiles)){
-            $msg = sprintf(
-                'No files were found matching: "%s" in directories: "%s"',
-                implode(', ', $options->getFiles()),
-                implode(', ', $options->getDirectories())
-            );
-
-            throw new Exception\NoFilesFoundException($msg);
+        if (!count($foundFiles)) {
+            return $this->files;
         }
 
         /**
          * @var FoundFile $foundFile
          */
-        foreach($foundFiles as $foundFile){
+        foreach ($foundFiles as $foundFile) {
             $this->files->append($foundFile->getPath());
         }
 
@@ -97,5 +88,4 @@ class EnvFileFinder implements EnvFileFinderInterface
     {
         return $this->options;
     }
-
 }
