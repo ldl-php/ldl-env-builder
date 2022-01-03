@@ -13,3 +13,4 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- fix/1201610905745305 - Decouple file finder from builder, add ReadableFileCollection to build method as parameter

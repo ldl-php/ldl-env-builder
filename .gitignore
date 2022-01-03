@@ -2,3 +2,4 @@ vendor
 .idea
 .env-compiled
 env-config.json
+.php-cs-fixer.cache

@@ -1,11 +1,13 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace LDL\Env\Builder;
 
-use LDL\Env\File\Finder\EnvFileFinderInterface;
 use LDL\Env\Util\Compiler\EnvCompilerInterface;
 use LDL\Env\Util\File\Parser\EnvFileParserInterface;
 use LDL\Env\Util\Line\Collection\EnvLineCollectionInterface;
+use LDL\File\Collection\ReadableFileCollection;
 
 final class EnvBuilder implements EnvBuilderInterface
 {
@@ -15,22 +17,14 @@ final class EnvBuilder implements EnvBuilderInterface
     private $parser;
 
     /**
-     * @var EnvFileFinderInterface
-     */
-    private $finder;
-
-    /**
      * @var EnvCompilerInterface
      */
     private $compiler;
 
     public function __construct(
-        EnvFileFinderInterface $finder,
         EnvFileParserInterface $fileParser,
         EnvCompilerInterface $compiler
-    )
-    {
-        $this->finder = $finder;
+    ) {
         $this->parser = $fileParser;
         $this->compiler = $compiler;
     }
@@ -38,13 +32,10 @@ final class EnvBuilder implements EnvBuilderInterface
     /**
      * {@inheritdoc}
      */
-    public function build(): EnvLineCollectionInterface
+    public function build(ReadableFileCollection $files): EnvLineCollectionInterface
     {
         return $this->compiler->compile(
-            $this->parser->parse(
-                $this->finder->find()
-            )
+            $this->parser->parse($files)
         );
     }
-
 }

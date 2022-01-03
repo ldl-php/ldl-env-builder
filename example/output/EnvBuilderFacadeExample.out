@@ -1,0 +1,9 @@
+[ Building compiled env file ]
+#Taken from /home/ldl/projects/ldl-env-builder/example/Application/.env
+example_Application_DEV_MODE=1
+#Taken from /home/ldl/projects/ldl-env-builder/example/Application/Admin/.env
+APPLICATION_ADMIN_URL=http://localhost:8080
+APPLICATION_ADMIN_MAINTENANCE_MODE=0
+#Taken from /home/ldl/projects/ldl-env-builder/example/Application/User/.env
+Application_User_APP_USER_URL=http://localhost:8080
+Application_User_MAINTENANCE_MODE=1
