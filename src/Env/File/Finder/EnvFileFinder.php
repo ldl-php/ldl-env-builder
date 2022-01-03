@@ -11,6 +11,7 @@ use LDL\File\Finder\FoundFile;
 use LDL\File\Validator\FileNameValidator;
 use LDL\File\Validator\FileTypeValidator;
 use LDL\File\Validator\PathValidator;
+use LDL\Framework\Base\Collection\CallableCollectionInterface;
 use LDL\Validators\Chain\AndValidatorChain;
 
 class EnvFileFinder implements EnvFileFinderInterface
@@ -21,13 +22,37 @@ class EnvFileFinder implements EnvFileFinderInterface
     private $options;
 
     /**
+     * @var CallableCollectionInterface
+     */
+    private $onEnvFileFound;
+
+    /**
+     * @var CallableCollectionInterface
+     */
+    private $onFileRejected;
+
+    /**
+     * @var CallableCollectionInterface
+     */
+    private $onFileFound;
+
+    /**
      * @var ReadableFileCollection
      */
     private $files;
 
-    public function __construct(Options\EnvFileFinderOptionsInterface $options = null)
-    {
+    public function __construct(
+        Options\EnvFileFinderOptionsInterface $options = null,
+        CallableCollectionInterface $onEnvFileFound = null,
+        CallableCollectionInterface $onFileRejected = null,
+        CallableCollectionInterface $onFileFound = null
+    ) {
         $this->options = $options ?? Options\EnvFileFinderOptions::fromArray([]);
+
+        $this->onEnvFileFound = $onEnvFileFound;
+        $this->onFileRejected = $onFileRejected;
+        $this->onFileFound = $onFileFound;
+
         $this->files = new ReadableFileCollection();
     }
 
@@ -64,7 +89,13 @@ class EnvFileFinder implements EnvFileFinderInterface
             $validators->getChainItems()->append(new FileNameValidator($file));
         }
 
-        $finder = new LocalFileFinderAdapter($validators);
+        $finder = new LocalFileFinderAdapter(
+            $validators,
+            $this->onEnvFileFound,
+            $this->onFileRejected,
+            $this->onFileFound
+        );
+
         $foundFiles = iterator_to_array($finder->find($this->options->getDirectories()), false);
 
         if (!count($foundFiles)) {
