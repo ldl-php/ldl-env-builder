@@ -1,35 +1,29 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace LDL\Env\File\Finder\Options;
 
+use LDL\File\Contracts\FileInterface;
 use LDL\Framework\Base\Contracts\ArrayFactoryInterface;
+use LDL\Framework\Base\Contracts\JsonFactoryInterface;
+use LDL\Framework\Base\Contracts\JsonFileFactoryInterface;
 use LDL\Framework\Base\Contracts\Type\ToArrayInterface;
 
-interface EnvFileFinderOptionsInterface extends ArrayFactoryInterface, ToArrayInterface, \JsonSerializable
+interface EnvFileFinderOptionsInterface extends ArrayFactoryInterface, ToArrayInterface, \JsonSerializable, JsonFactoryInterface, JsonFileFactoryInterface
 {
-    /**
-     * @return array
-     */
     public function getFiles(): array;
 
-    /**
-     * @return array
-     */
     public function getDirectories(): array;
 
-    /**
-     * @return array
-     */
     public function getExcludedDirectories(): array;
 
-    /**
-     * @return array
-     */
     public function getExcludedFiles(): array;
 
     /**
-     * @param EnvFileFinderOptionsInterface $options
      * @return EnvFileFinderOptionsInterface
      */
     public function merge(EnvFileFinderOptionsInterface $options);
+
+    public function write(string $file): FileInterface;
 }
