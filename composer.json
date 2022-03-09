@@ -38,6 +38,6 @@
         }
     },
     "bin": [
-        "bin/build"
+        "bin/ldl-env-build"
     ]
 }
