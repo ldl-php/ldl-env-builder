@@ -1,0 +1,39 @@
+[ Test env file finder options ]
+Create EnvFileFinderOptions instance with the following parameters:
+
+array:2 [
+  "directories" => array:1 [
+    0 => "/home/ldl/projects/ldl-env-builder/example/Application"
+  ]
+  "excludedDirectories" => array:1 [
+    0 => "Application/User"
+  ]
+]
+Print parameters from options object:
+
+array:4 [
+  "directories" => array:1 [
+    0 => "/home/ldl/projects/ldl-env-builder/example/Application"
+  ]
+  "files" => []
+  "excludedFiles" => []
+  "excludedDirectories" => array:1 [
+    0 => "Application/User"
+  ]
+]
+Write EnvFileFinderOptions to /tmp/2e598d06c853ef3288afac655a2f5324b2db0792
+
+Recreate EnvFileFinderOptions from previously written file ...
+
+Print options from recreated object:
+
+array:4 [
+  "directories" => array:1 [
+    0 => "/home/ldl/projects/ldl-env-builder/example/Application"
+  ]
+  "files" => []
+  "excludedFiles" => []
+  "excludedDirectories" => array:1 [
+    0 => "Application/User"
+  ]
+]

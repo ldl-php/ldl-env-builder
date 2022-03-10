@@ -4,100 +4,92 @@ declare(strict_types=1);
 
 namespace LDL\Env\File\Finder\Options;
 
+use LDL\Env\File\Finder\Options\Exception\EnvFileFinderOptionsException;
+use LDL\File\Collection\Contracts\DirectoryCollectionInterface;
+use LDL\File\Collection\DirectoryCollection;
 use LDL\File\Contracts\FileInterface;
 use LDL\File\File;
-use LDL\Framework\Base\Contracts\ArrayFactoryInterface;
 use LDL\Framework\Base\Exception\JsonFactoryException;
 use LDL\Framework\Base\Exception\JsonFileFactoryException;
+use LDL\Type\Collection\Interfaces\Type\StringCollectionInterface;
+use LDL\Type\Collection\Types\String\StringCollection;
 
 class EnvFileFinderOptions implements EnvFileFinderOptionsInterface
 {
     /**
-     * @var array
+     * @var DirectoryCollectionInterface
      */
     private $directories;
 
     /**
-     * @var array
+     * @var StringCollectionInterface
      */
     private $files;
+
     /**
-     * @var array
+     * @var StringCollectionInterface
      */
     private $excludedDirectories;
 
     /**
-     * @var array
+     * @var StringCollectionInterface
      */
     private $excludedFiles;
 
-    private function __construct(
-        array $directories = [],
-        array $files = ['.env'],
-        array $excludedDirectories = [],
-        array $excludedFiles = []
-    ) {
-        $this->directories = $directories;
-        $this->files = $files;
-        $this->excludedDirectories = $excludedDirectories;
-        $this->excludedFiles = $excludedFiles;
-    }
-
-    public function getFiles(): array
+    public function getFiles(): StringCollectionInterface
     {
         return $this->files;
     }
 
-    public function getDirectories(): array
+    public function getDirectories(): DirectoryCollectionInterface
     {
         return $this->directories;
     }
 
-    public function getExcludedDirectories(): array
+    public function getExcludedDirectories(): StringCollectionInterface
     {
         return $this->excludedDirectories;
     }
 
-    public function getExcludedFiles(): array
+    public function getExcludedFiles(): StringCollectionInterface
     {
         return $this->excludedFiles;
     }
 
-    public function merge(EnvFileFinderOptionsInterface $options): ArrayFactoryInterface
+    public function merge(EnvFileFinderOptionsInterface $options): EnvFileFinderOptionsInterface
     {
         return self::fromArray(
             array_merge($options->toArray(), $this->toArray())
         );
     }
 
-    public function write(string $path, bool $force = false): FileInterface
+    public static function fromArray(array $options = []): EnvFileFinderOptionsInterface
     {
-        return FileInterface::create(
-            $path,
-            json_encode($this, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT),
-            0644,
-            $force
-        );
-    }
+        $instance = new static();
+        $defaults = get_object_vars($instance);
+        $merge = array_merge($defaults, $options);
 
-    /**
-     * @return EnvFileFinderOptionsInterface
-     */
-    public static function fromArray(array $options = []): ArrayFactoryInterface
-    {
-        $k = 'array_key_exists';
+        $instance->directories = new DirectoryCollection($merge['directories']);
+        $instance->files = (new StringCollection($merge['files']))->filterEmptyLines();
+        $instance->excludedFiles = (new StringCollection($merge['excludedFiles']))->filterEmptyLines();
+        $instance->excludedDirectories = (new StringCollection($merge['excludedDirectories']))->filterEmptyLines();
 
-        return new self(
-            ($k('directories', $options) && is_array($options['directories'])) ? $options['directories'] : [],
-            ($k('files', $options) && is_array($options['files'])) ? $options['files'] : ['.env'],
-            ($k('excludedDirectories', $options) && is_array($options['excludedDirectories'])) ? $options['excludedDirectories'] : [],
-            ($k('excludedFiles', $options) && is_array($options['excludedFiles'])) ? $options['excludedFiles'] : [],
-        );
+        return $instance;
     }
 
     public function toArray(bool $useKeys = null): array
     {
-        return get_object_vars($this);
+        try {
+            return [
+                'directories' => iterator_to_array($this->directories->getRealPaths()),
+                'files' => $this->files->toPrimitiveArray(false),
+                'excludedFiles' => $this->excludedFiles->toPrimitiveArray(false),
+                'excludedDirectories' => $this->excludedDirectories->toPrimitiveArray(false),
+            ];
+        } catch (\Throwable $e) {
+            $msg = 'Could not convert env file finder options to array';
+            throw new EnvFileFinderOptionsException($msg, 0, $e);
+        }
     }
 
     public function jsonSerialize(): array
@@ -105,10 +97,10 @@ class EnvFileFinderOptions implements EnvFileFinderOptionsInterface
         return $this->toArray();
     }
 
-    public static function fromJsonFile(string $path): EnvFileFinderOptionsInterface
+    public static function fromJsonFile(string $file): EnvFileFinderOptionsInterface
     {
         try {
-            return self::fromJsonString((new File($path))->getLinesAsString());
+            return self::fromJsonString((new File($file))->getLinesAsString());
         } catch (\Throwable $e) {
             throw new JsonFileFactoryException("Could not load config from file $path", 0, $e);
         }
@@ -120,6 +112,21 @@ class EnvFileFinderOptions implements EnvFileFinderOptionsInterface
             return self::fromArray(json_decode($json, true, 2048, \JSON_THROW_ON_ERROR));
         } catch (\Throwable $e) {
             throw new JsonFactoryException('Could not decode JSON', 0, $e);
+        }
+    }
+
+    public function write(string $file, bool $force = false): FileInterface
+    {
+        try {
+            return File::create(
+                $file,
+                json_encode($this, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT),
+                0644,
+                $force
+            );
+        } catch (\Throwable $e) {
+            $msg = sprintf('Could not write env file finder options to file: %s', $file);
+            throw new EnvFileFinderOptionsException($msg, 0, $e);
         }
     }
 }
