@@ -25,7 +25,7 @@ try {
 
     dump($options->toArray());
 
-    $file = FileHelper::createSysTempFile();
+    $file = FileHelper::createSysTempFile('env_file_finder_options');
 
     echo "Write EnvFileFinderOptions to $file\n\n";
     $configFile = $options->write((string) $file, true);
