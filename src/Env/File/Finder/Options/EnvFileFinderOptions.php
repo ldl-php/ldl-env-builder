@@ -24,7 +24,7 @@ class EnvFileFinderOptions implements EnvFileFinderOptionsInterface
     /**
      * @var StringCollectionInterface
      */
-    private $files;
+    private $files = ['.env'];
 
     /**
      * @var StringCollectionInterface
