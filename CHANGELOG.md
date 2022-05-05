@@ -16,6 +16,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- fix/1201438240911767 - EnvFileFinderOptions has no __construct
 - fix/1201949094431920 - Bad defaults on EnvFileFinderOptions
 - fix/1201948369036951 - Return real path on finder options directories
 - fix/1201610905745305 - Decouple file finder from builder, add ReadableFileCollection to build method as parameter

@@ -63,18 +63,28 @@ class EnvFileFinderOptions implements EnvFileFinderOptionsInterface
         );
     }
 
+    public function __construct(
+        DirectoryCollectionInterface $directories = null,
+        StringCollectionInterface $files = null,
+        StringCollectionInterface $excludedFiles = null,
+        StringCollectionInterface $excludedDirectories = null
+    ) {
+        $this->directories = $directories ?? new DirectoryCollection();
+        $this->files = ($files ?? new StringCollection())->filterEmptyLines();
+        $this->excludedFiles = ($excludedFiles ?? new StringCollection())->filterEmptyLines();
+        $this->excludedDirectories = ($excludedDirectories ?? new StringCollection())->filterEmptyLines();
+    }
+
     public static function fromArray(array $options = []): EnvFileFinderOptionsInterface
     {
-        $instance = new static();
-        $defaults = get_object_vars($instance);
-        $merge = array_merge($defaults, $options);
+        $merge = array_merge(get_class_vars(__CLASS__), $options);
 
-        $instance->directories = new DirectoryCollection($merge['directories']);
-        $instance->files = (new StringCollection($merge['files']))->filterEmptyLines();
-        $instance->excludedFiles = (new StringCollection($merge['excludedFiles']))->filterEmptyLines();
-        $instance->excludedDirectories = (new StringCollection($merge['excludedDirectories']))->filterEmptyLines();
-
-        return $instance;
+        return new self(
+            new DirectoryCollection($merge['directories']),
+            new StringCollection($merge['files']),
+            new StringCollection($merge['excludedFiles']),
+            new StringCollection($merge['excludedDirectories'])
+        );
     }
 
     public function toArray(bool $useKeys = null): array
