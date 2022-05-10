@@ -24,7 +24,7 @@ class EnvFileFinderOptions implements EnvFileFinderOptionsInterface
     /**
      * @var StringCollectionInterface
      */
-    private $files = ['.env'];
+    private $files;
 
     /**
      * @var StringCollectionInterface
@@ -35,6 +35,45 @@ class EnvFileFinderOptions implements EnvFileFinderOptionsInterface
      * @var StringCollectionInterface
      */
     private $excludedFiles;
+
+    public function __construct(
+        DirectoryCollectionInterface $directories = null,
+        StringCollectionInterface $files = null,
+        StringCollectionInterface $excludedFiles = null,
+        StringCollectionInterface $excludedDirectories = null
+    ) {
+        $this->directories = $directories ?? new DirectoryCollection();
+        $this->files = ($files ?? new StringCollection(['.env']))->filterEmptyLines();
+        $this->excludedFiles = ($excludedFiles ?? new StringCollection())->filterEmptyLines();
+        $this->excludedDirectories = ($excludedDirectories ?? new StringCollection())->filterEmptyLines();
+    }
+
+    public static function fromArray(array $options = []): EnvFileFinderOptionsInterface
+    {
+        $merge = array_merge(get_class_vars(__CLASS__), $options);
+
+        return new self(
+            null === $merge['directories'] ? null : new DirectoryCollection($merge['directories']),
+            null === $merge['files'] ? null : new StringCollection($merge['files']),
+            null === $merge['excludedFiles'] ? null : new StringCollection($merge['excludedFiles']),
+            null === $merge['excludedDirectories'] ? null : new StringCollection($merge['excludedDirectories'])
+        );
+    }
+
+    public function toArray(bool $useKeys = null): array
+    {
+        try {
+            return [
+                'directories' => iterator_to_array($this->directories->getRealPaths()),
+                'files' => $this->files->toPrimitiveArray(false),
+                'excludedFiles' => $this->excludedFiles->toPrimitiveArray(false),
+                'excludedDirectories' => $this->excludedDirectories->toPrimitiveArray(false),
+            ];
+        } catch (\Throwable $e) {
+            $msg = 'Could not convert env file finder options to array';
+            throw new EnvFileFinderOptionsException($msg, 0, $e);
+        }
+    }
 
     public function getFiles(): StringCollectionInterface
     {
@@ -61,45 +100,6 @@ class EnvFileFinderOptions implements EnvFileFinderOptionsInterface
         return self::fromArray(
             array_merge($options->toArray(), $this->toArray())
         );
-    }
-
-    public function __construct(
-        DirectoryCollectionInterface $directories = null,
-        StringCollectionInterface $files = null,
-        StringCollectionInterface $excludedFiles = null,
-        StringCollectionInterface $excludedDirectories = null
-    ) {
-        $this->directories = $directories ?? new DirectoryCollection();
-        $this->files = ($files ?? new StringCollection())->filterEmptyLines();
-        $this->excludedFiles = ($excludedFiles ?? new StringCollection())->filterEmptyLines();
-        $this->excludedDirectories = ($excludedDirectories ?? new StringCollection())->filterEmptyLines();
-    }
-
-    public static function fromArray(array $options = []): EnvFileFinderOptionsInterface
-    {
-        $merge = array_merge(get_class_vars(__CLASS__), $options);
-
-        return new self(
-            new DirectoryCollection($merge['directories']),
-            new StringCollection($merge['files']),
-            new StringCollection($merge['excludedFiles']),
-            new StringCollection($merge['excludedDirectories'])
-        );
-    }
-
-    public function toArray(bool $useKeys = null): array
-    {
-        try {
-            return [
-                'directories' => iterator_to_array($this->directories->getRealPaths()),
-                'files' => $this->files->toPrimitiveArray(false),
-                'excludedFiles' => $this->excludedFiles->toPrimitiveArray(false),
-                'excludedDirectories' => $this->excludedDirectories->toPrimitiveArray(false),
-            ];
-        } catch (\Throwable $e) {
-            $msg = 'Could not convert env file finder options to array';
-            throw new EnvFileFinderOptionsException($msg, 0, $e);
-        }
     }
 
     public function jsonSerialize(): array
